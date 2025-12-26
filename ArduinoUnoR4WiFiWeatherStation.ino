@@ -83,10 +83,10 @@ const unsigned long DOWNLOAD_INTERVAL = 5 * 60 * 1000;
     If you have a Thermo Modulino and plug it in, its reading will be displayed
     as the indoor temperature. Everything will still work even if it's not
     connected, but if you're not using it and don't want to download the
-    Modulino library, just comment ou the following line
+    Modulino library, just comment out the following line
 */
-#define COMPILIE_MODULINO
-#ifdef COMPILIE_MODULINO
+#define COMPILE_MODULINO
+#ifdef COMPILE_MODULINO
 #include <Modulino.h>
 ModulinoThermo thermo;
 #endif
@@ -172,7 +172,7 @@ void setup() {
   }
 
 //initialize the Modulino Thermo
-#ifdef COMPILIE_MODULINO
+#ifdef COMPILE_MODULINO
   Modulino.begin();
   if (!thermo.begin()) {
     Serial.println("Modulino Thermo not found");
@@ -206,8 +206,6 @@ void loop() {
       if (currentTime - weatherData->getLastDownloadTime()
           > DOWNLOAD_INTERVAL) {
         downloadData();  // download forecast
-      } else {
-        Serial.println("using cached data");
       }
     }
 
@@ -262,11 +260,11 @@ void loop() {
     the indoor value node.
 */
 void checkIndoorTemp() {
-#ifdef COMPILIE_MODULINO
+#ifdef COMPILE_MODULINO
   if (thermo) {
     addThermoMessage = true;
-    indoorValue.value = NwsWeatherData::convertTemperature(
-      thermo.getTemperature(), TemperatureUnit::CELSIUS, OUT);
+    indoorValue.value = round(NwsWeatherData::convertTemperature(
+      thermo.getTemperature(), TemperatureUnit::CELSIUS, OUT));
     return;
   }
 #endif
@@ -313,9 +311,6 @@ void downloadData() {
   firstMessage = nullptr;
   lastMessage = nullptr;
   currentMessage = nullptr;
-
-  // get the units for the downloaded temperatures
-  const TemperatureUnit IN = weatherData->getTemperatureUnit();
 
   // if there are any hazards, make messages for them
   size_t hazardCount = weatherData->getHazardCount();
@@ -373,12 +368,12 @@ AsyncScrollingMessage* generateMessage(const String& message) {
 void addMessage(
   AsyncScrollingMessage* message,
   bool hasValue,
-  int value) {
+  double value) {
 
   //create a value node and call addMessage with the message and node
   ValueNode* valueNode = new ValueNode();
   valueNode->hasValue = hasValue;
-  valueNode->value = value;
+  valueNode->value = round(value);
   addMessage(message, valueNode);
 }
 
